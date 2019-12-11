@@ -1,0 +1,260 @@
+\documentclass{beamer}
+
+\mode<presentation>
+{
+  \usetheme{default}
+  \usecolortheme{dove}
+  \usefonttheme{default}
+  \setbeamertemplate{navigation symbols}{}
+  \setbeamertemplate{caption}[numbered]
+} 
+
+\usepackage[english]{babel}
+\usepackage[utf8x]{inputenc}
+\usepackage{listings}
+
+\definecolor{graybg}{RGB}{42,42,42}
+\definecolor{titlecolor}{RGB}{115,185,0}
+\definecolor{textcolor}{RGB}{232,232,232}
+
+\setbeamercolor{background canvas}{bg=graybg}
+\setbeamercolor{titlelike}{fg=titlecolor}
+\setbeamercolor{frametitle}{fg=titlecolor}
+\setbeamercolor{normal text}{fg=textcolor}
+\setbeamerfont{frametitle}{size=\Huge}
+\setbeamerfont{framesubtitle}{size=\Large}
+\setbeamertemplate{caption}{\raggedright\insertcaption\par}
+
+\AtBeginSection[]{
+	\begin{frame}
+		\vfill
+		\centering
+		\begin{beamercolorbox}[center]{title}
+			\Huge{\usebeamerfont{title}}\insertsectionhead
+		\end{beamercolorbox}
+		\vfill
+	\end{frame}
+}
+
+\title{GPGPU programming\\General-purpose Processing on Graphics Processing Units}
+\author{Robin Faury\\robinfaurypro@gmail.com\\faury@adobe.com}
+\date{12-11-2019}
+
+\begin{document}
+
+\begin{frame}
+\titlepage
+\end{frame}
+
+\begin{frame}{Introduction}
+	\begin{itemize}
+		\item The purpose of parallel processing
+		\item What is a graphic card?
+		\item The CUDA language
+		\item GPGPU usage in the industry
+		\item Q\&A
+	\end{itemize}
+\end{frame}
+
+\begin{frame}{Substance by Adobe}
+	\begin{figure}
+		\includegraphics[scale=0.15]{figures/vincent-derozier-assassin-s-creed-odyssey.jpg}
+		\caption{PBR render and its maps}
+	\end{figure}
+	Software suite for digital material creation.
+\end{frame}
+
+\section{The purpose of parallel processing}
+\begin{frame}{Moore's Law}
+	Every two years, the density of transistors in an integrated circuit doubles. That means we can compute the critical path of an algorithm faster.
+	\begin{figure}
+		\includegraphics[scale=0.2]{figures/buzz1.jpg}
+		\caption{\textit{To infinity and beyond!}}
+	\end{figure}
+\end{frame}
+
+\begin{frame}{Critical path}
+	Sometimes, algorithms process data one by one. When applicable, it is necessary to find the critical path and execute it in parallel. Modern CPUs offer the ability to run some threads at the same time. However, CPUs don't have a lot of cores available. For massive parallel computation we will use GPUs.
+	\begin{figure}
+		\includegraphics[scale=0.2]{figures/criticalPath.pdf}
+	\end{figure}
+\end{frame}
+
+\begin{frame}{Latency and Throughput}
+	\textbf{Latency:} This is the time between an action and the response to this action. For example, a key press event and its process.\\
+	\textbf{Throughput:} This is the rate of production. The number of pixel processed in one second.\\
+	The aim of \textbf{CPU} is to be very responsive. For that they adopt strategies to hide the latency (pre-fetch, branch prediction, out of order execution...). However, these algorithms need a lot of memory cache.\\
+	The aim of \textbf{GPU} is to process a lot of data. That why there is way more cores into GPU than CPU. In this case, cores must share the memory cache. Therefore, GPUs have a high throughput but a high latency too.
+\end{frame}
+
+\begin{frame}{A world of buffers}
+	The aim of parallel computing is solving heavy arithmetic computation on buffer. One process is called a kernel for the GPGPU or a shader for the graphics pipeline.
+	\begin{figure}
+		\includegraphics[scale=0.3]{figures/buffer.pdf}
+	\end{figure}
+\end{frame}
+
+\section{What is a graphic card?}
+\begin{frame}{History}
+	The first Graphics Processing Unit (GPU) was used for drawing game sprites. It was a dedicated device for formatted data. Ten years after we had the ability to draw lines, fill areas and control the blitter. In 1990, the graphical API appears and allows us to send assembly code to the device.
+\end{frame}
+
+\begin{frame}{Arithmetic Logic Unit}
+	The Arithmetic Logic Unit (ALU) is the component that performs arithmetic operations. The GPU is more focused on floating point operations, multiple ALUs are combined to create a Floating Point Unit (FPU).
+	\begin{figure}
+		\includegraphics[scale=0.3]{figures/ALU.pdf}
+	\end{figure}
+\end{frame}
+
+\begin{frame}{Core}
+	Cores are used to execute opcodes from compiled kernels. There are composed of an FPU, logic unit, branch unit and compare unit.
+	\begin{figure}
+		\includegraphics[scale=0.2]{figures/cudacore.pdf}
+	\end{figure}
+\end{frame}
+
+\begin{frame}{Streaming Multiprocessor}
+	The Streaming Multiprocessor (SM) organizes threads in groups of 32 called warp. This architecture is called SPMD (Single Program, Multiple Data).
+	\begin{figure}
+		\includegraphics[scale=0.3]{figures/warp.pdf}
+	\end{figure}
+\end{frame}
+
+\begin{frame}{Streaming Multiprocessor}
+	On the GP104 (The GPU of GTX 1080) each SM has four warps. 
+	\begin{figure}
+		\includegraphics[scale=0.3]{figures/SM.pdf}
+	\end{figure}
+\end{frame}
+
+\begin{frame}{Graphics Processing Clusters}
+	A Graphics Processing Clusters (GPC) is a collection of streaming multiprocessors. In the case of the GP104, there are four clusters.
+	\begin{figure}
+		\includegraphics[scale=0.3]{figures/GPC.pdf}
+	\end{figure}
+\end{frame}
+
+\begin{frame}{GP104}
+	All the GPC are connected to the L2 cache memory. The Gigathread engine distributes block threads to streaming multiprocessor. This device has 32 cores * 4 warps * 5 SMs * 4 GPCs = 2560 CUDA cores.
+	\begin{figure}
+		\includegraphics[scale=0.3]{figures/gp104.pdf}
+	\end{figure}
+\end{frame}
+
+\begin{frame}{TU102}
+	\begin{figure}
+		\includegraphics[scale=0.3]{figures/TU102.jpg}
+	\end{figure}
+\end{frame}
+
+\begin{frame}{TU102}
+	\begin{figure}
+		\includegraphics[scale=0.11]{figures/TU102_2.png}
+	\end{figure}
+\end{frame}
+
+\section{GPGPU languages}
+\begin{frame}{Languages}
+	To communicate with the graphic card we need languages. Each one have its pro and con.
+	\begin{itemize}
+		\item \textbf{CUDA:} The Nvidia language. Very close to the C++, easy to use. Works only on Nvidia card.
+		\item \textbf{DirectX:} The Window language. Design for game development on Window.
+		\item \textbf{Metal:} The Apple language. Design for graphic development on MacOS.
+		\item \textbf{OpenGL:} Developed by Kronos, design for all OS. Deprecated from 2019.
+		\item \textbf{Vulkan:} Developed by Kronos, design for all OS. Launched on 2018. Difficult to use.
+	\end{itemize}
+\end{frame}
+
+\begin{frame}{Host and Devices}
+	GPGPU programming is similar to web development. The CPU is the server and GPUs clients.
+	\begin{itemize}
+		\item Host: The CPU and its memory. The host can manage the memory on both the host and the device. The executed code can launch kernels.
+		\item Devices: The GPU and its memory. Kernels are executed on many GPU threads in parallel.
+	\end{itemize}
+\end{frame}
+
+\lstset{language=C++,basicstyle=\ttfamily,keywordstyle=\color{red},commentstyle=\color{green},tabsize=1}
+
+\defverbatim[colored]\codeIndex{
+\begin{lstlisting}
+	int index = blockIdx * blockDim + threadIdx;
+\end{lstlisting}
+}
+
+\defverbatim[colored]\codeIndexDim{
+\begin{lstlisting}
+	int x = blockId.x * blockDim.x + threadId.x;
+	int y = blockId.y * blockDim.y + threadId.y;
+	int z = blockId.z * blockDim.z + threadId.z;
+\end{lstlisting}
+}
+
+\begin{frame}{Indexing}
+	In the kernel, the thread Id, the block Id and the blockDim allow the user to compute the unique thread id.
+	\codeIndex
+	If data is stored into 2D or 3D array, it is possible to launch the kernel using a 3d vector instead of an integer and the index becomes:
+	\codeIndexDim
+\end{frame}
+
+\defverbatim[colored]\codeVulkan{
+\begin{lstlisting}
+	layout(std430, binding = 0) 
+				buffer layer { vec3 array[]; };
+
+	uniform Viewport {
+				uint width;
+	} viewport;
+
+	void main() {
+				const uint index = 
+							viewport.width*
+							gl_GlobalInvocationID.y+
+							gl_GlobalInvocationID.x;
+				array[index] = vec3(1.0, 0.0, 0.0);
+	}
+\end{lstlisting}
+}
+
+\begin{frame}{A Vulkan example}
+	\codeVulkan
+\end{frame}
+
+\section{GPGPU usage in the industry}
+\begin{frame}{APOD}
+	The Assess, Parallelize, Optimize, Deploy (APOD) design cycle's goal is to identify and correct bottlenecks into the application. 
+	\begin{figure}
+		\includegraphics[scale=0.3]{figures/APOD.pdf}
+	\end{figure}
+\end{frame}
+
+\begin{frame}{New devices}
+	\begin{figure}
+		\includegraphics[scale=0.3]{figures/TU102_SM.png}
+	\end{figure}
+\end{frame}
+
+\begin{frame}{RT cores}
+	\begin{figure}
+		\includegraphics[scale=0.25]{figures/sol.jpg}
+	\end{figure}
+\end{frame}
+
+\begin{frame}{tensor cores}
+	\begin{figure}
+		\includegraphics[scale=0.25]{figures/tensor.png}
+	\end{figure}
+\end{frame}
+
+\begin{frame}{Domain Specific}
+	\begin{itemize}
+		\item Deep Learning
+		\item Linear Algebra and Math: Solver, Random function, Finite element method, etc...
+		\item Signal
+		\item Image and video
+		\item Data oriented algorithm
+	\end{itemize}
+\end{frame}
+
+\section{Q\&A}
+
+\end{document}
