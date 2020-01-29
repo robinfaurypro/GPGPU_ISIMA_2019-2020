@@ -1,0 +1,131 @@
+\documentclass{article}
+\usepackage{tabularx}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage[margin=2cm]{geometry}
+\usepackage{cite}
+\usepackage[final]{hyperref}
+\usepackage{listings}
+\hypersetup{
+	colorlinks=true,
+	linkcolor=blue,
+	citecolor=blue,
+	filecolor=magenta,
+	urlcolor=blue         
+}
+
+\begin{document}
+
+\title{TP05\\GLSL Language}
+\author{Robin Faury}
+\date{01/22/20}
+\maketitle
+
+\begin{abstract}
+	In this practical work, we will see how to write, compile and send a program to the GPU.
+\end{abstract}
+
+\section{GLSL}
+The GLSL (OpenGL Shading Language) is the high-level language used to process data on a GPU. The syntax is based on the C programming language. This language includes built-in data types and functions for floating-point vectors and matrices. Be aware those new type work component-wise. For example, if you need the dot product, don't use the "*" operator but the "dot" function. You can also get value, subvector or swizzle a vector using .xyzw or .rgba.
+\begin{lstlisting}
+	vec4 a = vec4(vec2(1.0), 2.0, 3.0); // a = (1.0, 1.0, 2.0, 3.0)
+	vec4 b = vec4(a.yzw, a.x); // b = (1.0, 2.0, 3.0, 1.0)
+	vec4 c = a * b; // c = (1.0, 2.0, 6.0, 3.0)
+\end{lstlisting}
+
+\subsection{A shader line by line}
+The shader is the program we send to the GPU to tell cores what they need to compute. First, create a new file named "shader.comp". The "comp" part means you want a compute shader. You can also request for a vertex shader (.vert) or a fragment shader (.frag). Both of them are used for a graphic pipeline. This isn't the case for us.\\
+The first line of the file should be the version of your shader. This version must match the GLSL number version.
+
+\begin{lstlisting}
+	#version 440
+\end{lstlisting}
+
+Next you can push constant values (or uniform values). If your data is huge, it's recommended using another buffer to send your constants. This buffer is called UBO (Uniform Buffer Object). In our case we send a buffer. So we just need its size as constant.
+
+\begin{lstlisting}
+	layout(push_constant) uniform Parameters {
+		uint bufferSize;
+	} params;
+\end{lstlisting}
+
+The last line before the core of the shader is the layout of inputs buffers. Here, a buffer of vec4.
+
+\begin{lstlisting}
+	layout(std430, binding = 0) buffer lay0 { vec4 inputBuffer[]; };
+\end{lstlisting}
+
+As usual, any program start by a main function.
+
+\begin{lstlisting}
+	void main() {
+
+	}
+\end{lstlisting}
+
+This main function will be executed by all the core of the GPU at the same time. Fortunately, we can ask the ID of the thread to apply the same program on several data (Single Program Multiple Data (SPMD))
+
+\begin{lstlisting}
+	void main() {
+		const uint id = gl_GlobalInvocationID.x;
+	}
+\end{lstlisting}
+
+Our Buffer is stored as a linear buffer so we can use directly the id as index.
+
+\begin{lstlisting}
+	void main() {
+		const uint id = gl_GlobalInvocationID.x;
+		inputBuffer[id] = vec4(1.0, 0.0, 1.0, 1.0);
+	}
+\end{lstlisting}
+
+Finally, we should take care of memory access. Read or Write into unallocated memory can cause crash. We must check our buffer size is greater than the id.
+
+\begin{lstlisting}
+	void main() {
+		const uint id = gl_GlobalInvocationID.x;
+		if (params.bufferSize <= id) {
+			return;
+		}
+		inputBuffer[id] = vec4(1.0, 0.0, 1.0, 1.0);
+	}
+\end{lstlisting}
+
+For information gl\_GlobalInvocationID is a uvec3. That means you can organize your data as a linear buffer, or as an image, or as a 3D texture.
+
+\subsection{compilation}
+We just wrote our compute shader. With OpenGL (before Vulkan), we can send the text as string to the GPU and the program is compiled by the driver during the transfer. It's a good thing for the development time, but not for the security. If you open your program with a hexa editor, you'll see our source code. With Vulkan, you can compile your shader as a binary file called SPIR-V (.spv).\\
+Find the glslc.exe program on your Vulkan folder and run this command to compile the shader:
+\begin{lstlisting}
+	glslc.exe shader.comp -o shader.spv
+\end{lstlisting}
+
+\section{Load the shader}
+Back to your C++ application. Load the .spv file using, for example, "std::ifstream(filename, std::ios::binary);"
+
+\subsection{Shader Module}
+The vkShaderModule is the Vulkan object use to wrap the shader code before sending it to the compute pipeline.\\
+Create a VkShaderModuleCreateInfo with the sType VK\_STRUCTURE\_TYPE\_SHADER\_MODULE\_CREATE\_INFO. The member codeSize is the number of char and the pCode is a pointer on the code reinterpreted as uint32.
+
+\begin{lstlisting}
+	reinterpret_cast<const uint32_t*>(code.data());
+\end{lstlisting}
+
+Now create the vkShaderModule:
+
+\begin{lstlisting}
+	vkCreateShaderModule(logicalDevice, &shaderModuleCreateInfo, nullptr, &shaderModule);
+\end{lstlisting}
+
+Don't forget to check the return of the function and to destroy the object at the end.
+
+\section{Be familiar with GLSL}
+Going further.
+You can go on the website 
+\begin{lstlisting}
+	https://www.shadertoy.com/
+\end{lstlisting}
+to try the GLSL language. As a suggestion, you can search "circle" and take a look to the code of a simple one. Try to modify some input. 
+
+\end{document}
