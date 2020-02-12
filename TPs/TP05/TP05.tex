@@ -112,6 +112,8 @@ Create a VkShaderModuleCreateInfo with the sType VK\_STRUCTURE\_TYPE\_SHADER\_MO
 	reinterpret_cast<const uint32_t*>(code.data());
 \end{lstlisting}
 
+The codeSize should be memory align. Resize your vector using this formula : $\frac{size + 3}{4}*4$.
+
 Now create the vkShaderModule:
 
 \begin{lstlisting}

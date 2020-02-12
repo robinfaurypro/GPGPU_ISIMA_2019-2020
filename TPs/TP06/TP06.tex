@@ -39,7 +39,7 @@ On our shader we declare a buffer as input bound at the location 0. In this sect
 	descriptorSetLayoutBinding.pImmutableSamplers = nullptr;
 \end{lstlisting}
 
-We can now create the VkDescriptorSetLayoutCreateInfo with its sFlag set to \\VK\_STRUCTURE\_TYPE\_DESCRIPTOR\_SET\_LAYOUT\_CREATE\_INFO. This object just need the pointer to the descriptorSetLayoutBinding and the number of descriptor (1 for our case). If you need more buffer as input in your shader, you just have to add extra VkDescriptorSetLayoutBinding and increase the number of bindingCount. As a suggestion, you can store you VkDescriptorSetLayoutBinding in a vector.\\
+We can now create the VkDescriptorSetLayoutCreateInfo with its sType set to \\VK\_STRUCTURE\_TYPE\_DESCRIPTOR\_SET\_LAYOUT\_CREATE\_INFO. This object just need the pointer to the descriptorSetLayoutBinding and the number of descriptor (1 for our case). If you need more buffer as input in your shader, you just have to add extra VkDescriptorSetLayoutBinding and increase the number of bindingCount. As a suggestion, you can store you VkDescriptorSetLayoutBinding in a vector.\\
 The last step is to call the vkCreateDescriptorSetLayout to get the handle of the VkDescriptorSetLayout. As usual you should delete your handle at the end of your program using vkDestroyDescriptorSetLayout.
 
 \subsection{Descriptor pool}
@@ -164,7 +164,7 @@ The last value is the timeout. -1 means no timeout.
 After that, we can destroy the fence using vkDestroyFence.
 
 \section{Result}
-You can now use your getBuffer function to transfer the GPU buffer filled by the shader to the stage buffer and finaly to the CPU and save it as a BMP.
+You can now use your getData function to transfer the GPU buffer filled by the shader to the stage buffer and finaly to the CPU and save it as a BMP.
 \begin{figure}[h]
 	\centering
 	\includegraphics[scale=1]{figures/result.png}
