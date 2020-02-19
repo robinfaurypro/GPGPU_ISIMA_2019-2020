@@ -105,7 +105,7 @@ And set the object to the pipelineLayoutCreateInfo:
 	pipelineLayoutCreateInfo.pushConstantRangeCount = 1;
 	pipelineLayoutCreateInfo.pPushConstantRanges = &pushConstantRange;
 \end{lstlisting}
-Don't forget to destroy the handle of the pipeline layout.\\
+Create the VkPipelineLayout using vkCreatePipelineLayout and don't forget to destroy the handle of the pipeline layout at the end.\\
 Next, we can create the structure relative to the shader module.
 \begin{lstlisting}
 	VkPipelineShaderStageCreateInfo pipelineShaderStageCreateInfo = {};
@@ -116,7 +116,7 @@ Next, we can create the structure relative to the shader module.
 	pipelineShaderStageCreateInfo.pName = "main";
 \end{lstlisting}
 
-Finally, we can create our compute pipeline using the vkCreateComputePipelines function and its VkComputePipelineCreateInfo struct input (sType = VK\_STRUCTURE\_TYPE\_COMPUTE\_PIPELINE\_CREATE\_INFO).
+Finally, we can create our compute pipeline using the vkCreateComputePipelines function and its VkComputePipelineCreateInfo struct input (sType = VK\_STRUCTURE\_TYPE\_COMPUTE\_PIPELINE\_CREATE\_INFO). Fill the structure with pipelineShaderStageCreateInfo and pipelineLayout.
 
 \section{Command buffer}
 On the TP04, we saw how to create a command pool and allocate command buffer dedicated for buffer transfer. Here, we will make a similar work. Create a command pool object with the default parameters. Allocate a command buffer and create a VkCommandBufferBeginInfo in the same way as the TP04. We can now fill the command buffer:

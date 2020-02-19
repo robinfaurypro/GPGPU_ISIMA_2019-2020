@@ -60,4 +60,16 @@ That means you want to run 2048x2048 work group. Each work group will run one co
 
 The X and Y value are 1 by default. You can choose any combinaisons but keep in mind that $local\_size\_x * local\_size\_y * local\_size\_z <= maxComputeWorkGroupInvocations$. On your shader the image coordinate can be computed using gl\_WorkGroupID * gl\_WorkGroupSize + gl\_LocalInvocationID instead of gl\_GlobalInvocationID.
 
+\begin{figure}[h]
+	\centering
+	\includegraphics[scale=0.2]{figures/work_groupe_1.png}
+	\caption{3 pixels processed with 1 shader invocation from 3 work groupes}
+\end{figure}
+
+\begin{figure}[h]
+	\centering
+	\includegraphics[scale=0.2]{figures/work_groupe_0.png}
+	\caption{96 pixels processed with 32 shader invocations from 3 work groupes}
+\end{figure}
+
 \end{document}
