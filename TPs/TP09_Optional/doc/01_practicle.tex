@@ -1,0 +1,123 @@
+\documentclass{article}
+\usepackage{tabularx}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage[margin=2cm]{geometry}
+\usepackage{cite}
+\usepackage[final]{hyperref}
+\usepackage{listings}
+\hypersetup{
+	colorlinks=true,
+	linkcolor=blue,
+	citecolor=blue,
+	filecolor=magenta,
+	urlcolor=blue         
+}
+
+\begin{document}
+
+\title{TP09\\Introduction to CUDA}
+\author{Robin Faury}
+\date{03/04/20}
+\maketitle
+
+\begin{abstract}
+	In this practical work, we will see how to convert a simple iterative process into a paralell process using CUDA language. This is a quick and simple introduction du CUDA. The aim is just to understand the syntax and how to store and access buffers in the GPU memory.
+\end{abstract}
+
+\section{Introduction}
+First, generate the Visual Studio solution, compile it and run the cuda program.\\
+Open a terminal on your working folder and use this cmake command:
+\begin{lstlisting}
+	cmake -G "Visual Studio 15 Win64" ..
+\end{lstlisting}
+If everything is going well, you can compile and run the cuda\_lesson\_helloworld executable.\\
+Using MSVC compiler for Visual Studio IDE is not the only option. You can also use the CUDA C++ compiler via the terminal. 
+\begin{lstlisting}
+	nvcc main.cu -o cuda_lesson_helloworld
+\end{lstlisting}
+The cuda file extention is .cu.
+
+\section{The host}
+Remember the host is the CPU part of the process. So you have to declare and fill input buffers before the GPU copy. First we have to create a buffer of float for the input buffer and another with the same size for the output result.
+
+\section{The device}
+The device is related to GPU operations. On this section, we will see how to send buffers to the VRAM and declare and run kernels. 
+\subsection{The memory}
+	Before doing the copy to the CUDA's Unified Memory from the host we must allocate the space. The function cudaMallocManaged takes as input a pointer and the data size. Remember that the bufferSize value will be spread into warps (a block of 32 threads). It should be a multiple of 32.
+\begin{lstlisting}
+	char* buffer;
+	cudaMallocManaged(&buffer, nbElement*sizeof(float));
+\end{lstlisting}
+As usual, you must delete your pointer at the end of you program. For this, use the cuda function:
+\begin{lstlisting}
+	cudaFree(buffer);
+\end{lstlisting}
+
+\subsection{The kernel}
+	Declaring a kernel is easy with CUDA. You just have to write your code like a C++ function and add the \_\_global\_\_ keyword before. This indicates the CUDA C++ compiler that your function is device code.
+\begin{lstlisting}
+	__global__
+	void Manderbrot(int nbElement, float *inputBuffer, float *outputBuffer)
+	{
+		for (unsigned int i = 0u; i < nbElement; ++i)
+			outputBuffer[i] = inputBuffer[i] + 1.f;
+	}
+\end{lstlisting}
+For the moment the function is designed for one thread. We can run this function using this syntaxe:
+\begin{lstlisting}
+	// We use one thread per block and one block per grid
+	Manderbrot<<<1, 1>>>(nbElement, buffer, outBuffer);
+\end{lstlisting}
+Let's increment the number of threads per block. Something like 256 may a good value for big buffers. CUDA allows us to know the index of the thread through the threadIdx.x value. 
+
+\begin{lstlisting}
+	__global__
+	void Manderbrot(int nbElement, float *inputBuffer, float *outputBuffer)
+	{
+		int index = threadIdx.x;
+		for (unsigned int i = index; i < nbElement; ++i)
+			outputBuffer[i] = inputBuffer[i] + 1.f;
+	}
+	
+	// ...
+
+	// We use 256 threads per block and one block per grid
+	Manderbrot<<<1, 256>>>(nbElement, buffer, outBuffer);
+\end{lstlisting}
+
+In the same way we can increase the number of blocks per grid to dispatch the computation on every streaming multiprocessor.
+\begin{lstlisting}
+	__global__
+	void Manderbrot(int nbElement, float *inputBuffer, float *outputBuffer)
+	{
+		int stride = blockDim.x * gridDim.x; // stride = 256 * blockPerGrid
+		int index = blockIdx.x * blockDim.x + threadIdx.x;
+		outputBuffer[index] = inputBuffer[index] + 1.f;
+	}
+	
+	// ...
+
+	int blockPerGrid = (nbElement + 256 - 1) / 256;
+	Manderbrot<<<blockPerGrid, 256>>>(nbElement, buffer, outBuffer);
+\end{lstlisting}
+We can notice in this case that we run nbElement threads so we can remove the for loop. Before reading the output buffer you have to wait the kernel execution. For that you can use the cudaDeviceSyncronize function.
+
+\newpage
+\section{Mandelbrot}
+We can see threadIdx.x has a 'x' struct member. That means we can organize our threads per blocks (even blocks per grid) in a non linear way using the CUDA object dim3.
+\begin{lstlisting}
+	__global__
+	void Manderbrot(int nbElement, float *inputBuffer, float *outputBuffer)
+	{
+		int i = blockIdx.x * blockDim.x + threadIdx.x;
+		int j = blockIdx.y * blockDim.y + threadIdx.y;
+		// ...
+	}
+
+	// ...
+
+	dim3 threadsPerBlock(16, 16);
+	Manderbrot<<<1, threadsPerBlock>>>(nbElement, buffer, outBuffer);
+\end{lstlisting}
+\end{document}
